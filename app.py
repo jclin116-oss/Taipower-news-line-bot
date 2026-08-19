@@ -18,7 +18,7 @@ TARGET_IDS = [
       'C3b3a18e6bddc2ee3ac4c9347d67c4031',  # 服務所群組
 ]
 
-DEFAULT_KEYWORDS = '基隆 台電'
+DEFAULT_KEYWORDS = '基隆 台電, 汐止 台電, 瑞芳 台電, 萬里 台電, 金山 台電, 貢寮 台電, 雙溪 台電, 平溪 台電, 基隆區處, 停電 基隆, 停電 汐止, 跳電 基隆, 跳電 汐止'
 SEARCH_HOURS = 24
 MAX_DISPLAY_ITEMS = 15 # 縮短網址後，維持顯示 15 則
 
