@@ -1,0 +1,2 @@
+requests
+line-bot-sdk
