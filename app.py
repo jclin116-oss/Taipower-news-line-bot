@@ -93,20 +93,20 @@ def format_line_message(news_list, keywords_str, hours):
   now_str = datetime.now().strftime('%Y-%m-%d %H:%M')
 
   if not news_list:
-    return f'⚡️【台電新聞輿情日報】\n📅 統計時間：{now_str}\n🔍 搜尋條件：{keywords_str}（過去 {hours} 小時）\n\n目前未發現符合條件的新聞。'
+    return f'【台電新聞輿情日報】\n 統計時間：{now_str}\n 搜尋條件：{keywords_str}（過去 {hours} 小時）\n\n目前未發現符合條件的新聞。'
 
   total_count = len(news_list)
   msg_lines = [
-      f'⚡️【台電新聞輿情日報】',
-      f'📅 統計時間：{now_str}',
-      f'🔍 關鍵字：{keywords_str}（過去 {hours} 小時）',
-      f'📊 共發現 {total_count} 則關聯訊息',
+      f'【台電新聞輿情日報】',
+      f' 統計時間：{now_str}',
+      f' 關鍵字：{keywords_str}（過去 {hours} 小時）',
+      f' 共發現 {total_count} 則關聯訊息',
       '--------------------------------',
   ]
 
   display_news = news_list[:MAX_DISPLAY_ITEMS]
   for idx, item in enumerate(display_news, 1):
-    news_block = f"{idx}. [{item['source']}] {item['title']}\n⏰ {item['time']}\n🔗 {item['link']}"
+    news_block = f"{idx}. [{item['source']}] {item['title']}\n {item['time']}\n {item['link']}"
     msg_lines.append(news_block)
 
   if total_count > MAX_DISPLAY_ITEMS:
