@@ -103,10 +103,10 @@ def format_line_message(news_list, keywords_str, hours):
 
   total_count = len(news_list)
   msg_lines = [
-      f"⚡️【台電新聞輿情日報】",
-      f"📅 統計時間：{now_str}",
-      f"🔍 關鍵字：{keywords_str}（過去 {hours} 小時）",
-      f"📊 共發現 {total_count} 則關聯訊息",
+      f"【台電新聞輿情日報】",
+      f" 統計時間：{now_str}",
+      f" 關鍵字：{keywords_str}（過去 {hours} 小時）",
+      f" 共發現 {total_count} 則關聯訊息",
       "--------------------------------",
   ]
 
