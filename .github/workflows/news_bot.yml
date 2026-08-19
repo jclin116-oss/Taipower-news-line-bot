@@ -3,8 +3,8 @@ name: Daily News Notifier
 on:
   schedule:
     # Cron 時間以 UTC 為主，台灣時間 (UTC+8) 需減 8 小時
-    # 每天台灣時間 07:00 (UTC 23:00 前一天) 執行
-    - cron: '0 23 * * *'
+    # 每天台灣時間 07:11 (UTC 23:00 前一天) 執行
+    - cron: '11 23 * * *'
   
   # 支援在 GitHub 網頁上手動按鈕觸發執行（測試用）
   workflow_dispatch:
