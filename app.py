@@ -113,13 +113,13 @@ def format_line_message(news_list, keywords_str, hours):
 
     if not news_list:
         return (
-            f"【基隆台電新聞輿情日報】\n 統計時間：{now_str}\n"
+            f"【基隆區處轄區新聞輿情日報】\n 統計時間：{now_str}\n"
             f" 搜尋條件：{keywords_str}（過去 {hours} 小時）\n\n目前未發現符合條件的新聞。"
         )
 
     total_count = len(news_list)
     msg_lines = [
-        f"【基隆台電新聞輿情日報】",
+        f"【基隆區處轄區新聞輿情日報】",
         f" 統計時間：{now_str}",
         f" 關鍵字：{keywords_str}",
         f" 共發現 {total_count} 則關聯訊息",
