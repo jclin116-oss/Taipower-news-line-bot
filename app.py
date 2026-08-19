@@ -123,7 +123,7 @@ def format_line_message(news_list, keywords_str, hours):
         f" 自動生成時間：{now_str}",
         f" 搜尋範圍：基隆區處轄區"
         f" 共發現 {total_count} 則相關新聞",
-        '---------------------------------',
+        '------------------------------',
     ]
 
     display_news = news_list[:MAX_DISPLAY_ITEMS]
@@ -143,7 +143,7 @@ def format_line_message(news_list, keywords_str, hours):
 
     if total_count > MAX_DISPLAY_ITEMS:
         msg_lines.append(
-            '================================\n'
+            '==========================\n'
             f'⚠️ 訊息過長，已展示前 {MAX_DISPLAY_ITEMS} 則最新新聞。'
         )
 
