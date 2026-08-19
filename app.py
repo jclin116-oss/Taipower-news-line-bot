@@ -91,33 +91,40 @@ def fetch_google_news(keywords_str, hours):
 
 
 def format_line_message(news_list, keywords_str, hours):
-  now_str = datetime.now().strftime('%Y-%m-%d %H:%M')
+  # 取得 UTC 時間並加上 8 小時轉為台灣時間
+  now_tw = datetime.utcnow() + timedelta(hours=8)
+  now_str = now_tw.strftime("%Y-%m-%d %H:%M")
 
   if not news_list:
-    return f'【台電新聞輿情日報】\n 統計時間：{now_str}\n 搜尋條件：{keywords_str}（過去 {hours} 小時）\n\n目前未發現符合條件的新聞。'
+    return (
+        f"⚡️【台電新聞輿情日報】\n📅 統計時間：{now_str}\n🔍"
+        f" 搜尋條件：{keywords_str}（過去 {hours} 小時）\n\n目前未發現符合條件的新聞。"
+    )
 
   total_count = len(news_list)
   msg_lines = [
-      f'【台電新聞輿情日報】',
-      f' 統計時間：{now_str}',
-      f' 關鍵字：{keywords_str}（過去 {hours} 小時）',
-      f' 共發現 {total_count} 則關聯訊息',
-      '--------------------------------',
+      f"⚡️【台電新聞輿情日報】",
+      f"📅 統計時間：{now_str}",
+      f"🔍 關鍵字：{keywords_str}（過去 {hours} 小時）",
+      f"📊 共發現 {total_count} 則關聯訊息",
+      "--------------------------------",
   ]
 
   display_news = news_list[:MAX_DISPLAY_ITEMS]
   for idx, item in enumerate(display_news, 1):
-    news_block = f"{idx}. [{item['source']}] {item['title']}\n {item['time']}\n {item['link']}"
+    news_block = (
+        f"{idx}. [{item['source']}] {item['title']}\n⏰ {item['time']}\n🔗"
+        f" {item['link']}"
+    )
     msg_lines.append(news_block)
 
   if total_count > MAX_DISPLAY_ITEMS:
     msg_lines.append(
-        '--------------------------------\n'
-        f'⚠️ 訊息過長，已展示前 {MAX_DISPLAY_ITEMS} 則最新新聞。'
+        "--------------------------------\n"
+        f"⚠️ 訊息過長，已展示前 {MAX_DISPLAY_ITEMS} 則最新新聞。"
     )
 
-  return '\n\n'.join(msg_lines)
-
+  return "\n\n".join(msg_lines)
 
 def main():
   print(f'[{datetime.now()}] 啟動 GitHub Actions 輿情推播工作...')
