@@ -123,7 +123,7 @@ def format_line_message(news_list, keywords_str, hours):
         f" 自動生成時間：{now_str}",
         f" 搜尋範圍：基隆區處轄區"
         f" 共發現 {total_count} 則相關新聞",
-        '================================',
+        '---------------------------------',
     ]
 
     display_news = news_list[:MAX_DISPLAY_ITEMS]
