@@ -2,11 +2,9 @@ name: Daily News Notifier
 
 on:
   schedule:
-    # Cron 時間以 UTC 為主，台灣時間 (UTC+8) 需減 8 小時
     # 每天台灣時間 07:11 (UTC 23:00 前一天) 執行
     - cron: '11 23 * * *'
   
-  # 支援在 GitHub 網頁上手動按鈕觸發執行（測試用）
   workflow_dispatch:
 
 jobs:
@@ -14,10 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 切換至專案程式碼
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4  # 從 v3 升級至 v4
 
       - name: 設定 Python 環境
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5  # 從 v4 升級至 v5
         with:
           python-version: '3.10'
 
