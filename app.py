@@ -21,7 +21,6 @@ DEFAULT_KEYWORDS = '基隆 台電, 汐止 台電, 瑞芳 台電, 新北萬里 �
 SEARCH_HOURS = 24
 MAX_DISPLAY_ITEMS = 15
 
-# 初始化 LINE Bot (注意: 如有需要可依提示升級為 v3 版本，目前維持現有邏輯)
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 
 # --- 新聞相關功能 ---
@@ -62,10 +61,10 @@ def fetch_google_news(keywords_str, hours):
             seen_titles.add(item['title']); unique_news.append(item)
     return sorted(unique_news, key=lambda x: x['timestamp'], reverse=True)
 
-def format_line_message(news_list, keywords_str, hours):
+def format_news_block(news_list):
     now_str = (datetime.utcnow() + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M")
-    if not news_list: return f"【基隆區處轄區-重點新聞輿情日報】\n{now_str}\n尚無新新聞。"
-    msg_lines = [f"【基隆區處轄區-重點新聞輿情日報】", f"時間：{now_str}", f"共發現 {len(news_list)} 則新聞", '------------------------------']
+    if not news_list: return f"【重點新聞輿情】\n{now_str}\n尚無新新聞。"
+    msg_lines = [f"【重點新聞輿情】", f"時間：{now_str}", f"共發現 {len(news_list)} 則新聞", '------------------------------']
     for idx, item in enumerate(news_list[:MAX_DISPLAY_ITEMS], 1):
         msg_lines.append(f"{idx}. [{item['source']}] {item['title']}\n {item['time']} {shorten_url(item['link'])}")
     return '\n\n'.join(msg_lines)
@@ -78,7 +77,6 @@ def fetch_itinerary_from_repo_a():
     try:
         res = requests.get(url, headers=headers)
         if res.status_code != 200:
-            print(f"DEBUG: API 請求失敗，狀態碼: {res.status_code}")
             return None
             
         artifacts = res.json().get("artifacts", [])
@@ -93,34 +91,40 @@ def fetch_itinerary_from_repo_a():
         print(f"DEBUG: 抓取過程發生異常: {e}")
         return None
 
-# --- 主程式 ---
-def main():
-    # 1. 執行新聞推送
-    try:
-        news = fetch_google_news(DEFAULT_KEYWORDS, SEARCH_HOURS)
-        line_bot_api.push_message(LINE_USER_ID, TextSendMessage(text=format_line_message(news, DEFAULT_KEYWORDS, SEARCH_HOURS)))
-    except Exception as e: print(f"新聞推播失敗: {e}")
+def format_itinerary_block(itinerary):
+    if not itinerary:
+        return "【政要行程通知】\n目前無法抓取行程檔案（可能 REPO A 尚未產生）。"
+    
+    date_str = itinerary.get('date', '未知日期')
+    items = itinerary.get("matched_items", [])
+    
+    if items:
+        block = f"【政要行程關鍵字通知】\n日期：{date_str}\n發現 {len(items)} 筆行程："
+        for item in items:
+            block += f"\n\n- [{item.get('機關', '未知')}] {item.get('官階', '')}\n  時間：{item.get('時間', '')}\n  行程：{item.get('行程', '')}\n  關鍵字：{item.get('關鍵字', '')}"
+        return block
+    else:
+        return f"【政要行程關鍵字通知】\n日期：{date_str}\n今日無符合關鍵字的政要行程。"
 
-    # 2. 執行政要行程推送 (強制回報狀態)
+# --- 主程式：合併單一訊息發送（政要行程在前，新聞在後） ---
+def main():
     try:
+        # 1. 取得政要行程內容
         itinerary = fetch_itinerary_from_repo_a()
-        if itinerary:
-            date_str = itinerary.get('date', '未知日期')
-            items = itinerary.get("matched_items", [])
-            
-            if items:
-                it_msg = f"【政要行程關鍵字通知】\n日期：{date_str}\n發現 {len(items)} 筆行程：\n"
-                for item in items:
-                    it_msg += f"\n[{item.get('機關', '未知')}] {item.get('官階', '')}\n時間：{item.get('時間', '')}\n行程：{item.get('行程', '')}\n關鍵字：{item.get('關鍵字', '')}\n"
-            else:
-                it_msg = f"【政要行程關鍵字通知】\n日期：{date_str}\n今日無符合關鍵字的政要行程。"
-        else:
-            it_msg = "【政要行程通知】\n目前無法抓取政要行程檔案 (可能是 REPO A 尚未產生 Artifact)。"
-            
-        line_bot_api.push_message(LINE_USER_ID, TextSendMessage(text=it_msg))
-    except Exception as e: 
-        print(f"行程推播失敗: {e}")
-        line_bot_api.push_message(LINE_USER_ID, TextSendMessage(text=f"【政要行程通知】\n執行發生錯誤：{e}"))
+        itinerary_text = format_itinerary_block(itinerary)
+        
+        # 2. 取得新聞內容
+        news = fetch_google_news(DEFAULT_KEYWORDS, SEARCH_HOURS)
+        news_text = format_news_block(news)
+        
+        # 3. 結合成一則訊息（政要行程放開頭）
+        combined_message = f"{itinerary_text}\n\n==============================\n\n{news_text}"
+        
+        # 4. 發送單一 LINE 訊息
+        line_bot_api.push_message(LINE_USER_ID, TextSendMessage(text=combined_message))
+        
+    except Exception as e:
+        print(f"推播執行失敗: {e}")
 
 if __name__ == '__main__':
     main()
