@@ -2,7 +2,7 @@ name: Daily News Notifier
 
 on:
   schedule:
-    - cron: '30 5 * * *'
+    - cron: '2 7 * * *'
   workflow_dispatch:
 
 jobs:
