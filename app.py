@@ -63,17 +63,17 @@ def fetch_google_news(keywords_str, hours):
 
 def format_news_block(news_list):
     now_str = (datetime.utcnow() + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M")
-    if not news_list: return f"【基隆區處轄區重點新聞輿情】\n{now_str}\n尚無新新聞。"
+    if not news_list:
+        return f"【基隆區處轄區-重點新聞輿情】\n時間：{now_str}\n尚無新新聞。"
     
-    # 讓標題、時間、數量緊密排列，僅在數量下方空一行
     msg_lines = [
-        f"【基隆區處轄區重點新聞輿情】",
+        "【基隆區處轄區-重點新聞輿情】",
         f"時間：{now_str}",
-        f"共 {len(news_list)} 則新聞\n"
+        f"共 {len(news_list)} 則新聞"
     ]
     
     for idx, item in enumerate(news_list[:MAX_DISPLAY_ITEMS], 1):
-        msg_lines.append(f"{idx}. [{item['source']}] {item['title']}\n{item['time']} {shorten_url(item['link'])}")
+        msg_lines.append(f"\n{idx}. [{item['source']}] {item['title']}\n{item['time']} {shorten_url(item['link'])}")
         
     return '\n'.join(msg_lines)
 
@@ -101,20 +101,21 @@ def fetch_itinerary_from_repo_a():
 
 def format_itinerary_block(itinerary):
     if not itinerary:
-        return "【政要行程通知】\n目前無法抓取行程檔案（可能 REPO A 尚未產生）。"
+        now_str = (datetime.utcnow() + timedelta(hours=8)).strftime("%Y-%m-%d")
+        return f"【政要公開行程】\n日期：{now_str}\n目前無法抓取行程檔案（可能 REPO A 尚未產生）。"
     
     date_str = itinerary.get('date', '未知日期')
     items = itinerary.get("matched_items", [])
     
     if items:
-        block = f"【政要公開行程結果】\n日期：{date_str}\n發現 {len(items)} 筆基隆區處轄區行程："
+        block = f"【政要公開行程】\n日期：{date_str}\n發現 {len(items)} 筆行程："
         for item in items:
             block += f"\n\n- [{item.get('機關', '未知')}] {item.get('官階', '')}\n  時間：{item.get('時間', '')}\n  行程：{item.get('行程', '')}\n  關鍵字：{item.get('關鍵字', '')}"
         return block
     else:
-        return f"【政要公開行程通知】\n日期：{date_str}\n今日無符合基隆區處轄區的政要行程。"
+        return f"【政要公開行程】\n日期：{date_str}\n今日無來訪基隆區處轄區的政要行程。"
 
-# --- 主程式：合併單一訊息發送（政要行程在前，新聞在後） ---
+# --- 主程式：合併單一訊息發送 ---
 def main():
     try:
         # 1. 取得政要行程內容
@@ -125,8 +126,8 @@ def main():
         news = fetch_google_news(DEFAULT_KEYWORDS, SEARCH_HOURS)
         news_text = format_news_block(news)
         
-        # 3. 結合成一則訊息（政要行程放開頭）
-        combined_message = f"{itinerary_text}\n-----------\n{news_text}"
+        # 3. 結合成一則訊息（最上方加上「系統定時自動化通知」）
+        combined_message = f"系統定時自動化通知\n\n{itinerary_text}\n\n{news_text}"
         
         # 4. 發送單一 LINE 訊息
         line_bot_api.push_message(LINE_USER_ID, TextSendMessage(text=combined_message))
