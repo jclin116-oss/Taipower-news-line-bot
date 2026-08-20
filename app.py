@@ -126,7 +126,7 @@ def main():
         news_text = format_news_block(news)
         
         # 3. 結合成一則訊息（政要行程放開頭）
-        combined_message = f"{itinerary_text}\n\n=============\n\n{news_text}"
+        combined_message = f"{itinerary_text}\n-----------\n{news_text}"
         
         # 4. 發送單一 LINE 訊息
         line_bot_api.push_message(LINE_USER_ID, TextSendMessage(text=combined_message))
