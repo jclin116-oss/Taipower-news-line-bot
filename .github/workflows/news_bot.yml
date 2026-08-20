@@ -2,9 +2,7 @@ name: Daily News Notifier
 
 on:
   schedule:
-    # 每天台灣時間 07:11 (UTC 23:00 前一天) 執行
     - cron: '11 23 * * *'
-  
   workflow_dispatch:
 
 jobs:
@@ -12,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 切換至專案程式碼
-        uses: actions/checkout@v4  # 從 v3 升級至 v4
+        uses: actions/checkout@v4
 
       - name: 設定 Python 環境
-        uses: actions/setup-python@v5  # 從 v4 升級至 v5
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
@@ -25,7 +23,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: 執行新聞推播腳本
-      env:
-        LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
-        LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
-      run: python app.py
+        env:
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+        run: python app.py
