@@ -64,10 +64,10 @@ def fetch_google_news(keywords_str, hours):
 def format_news_block(news_list):
     now_str = (datetime.utcnow() + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M")
     if not news_list: return f"【基隆區處轄區重點新聞輿情】\n{now_str}\n尚無新新聞。"
-    msg_lines = [f"【基隆區處轄區重點新聞輿情】", f"時間：{now_str}", f"共 {len(news_list)} 則新聞"]
+    msg_lines = [f"【基隆區處轄區重點新聞輿情】", f"時間：{now_str}", f"共 {len(news_list)} 則新聞\n"]
     for idx, item in enumerate(news_list[:MAX_DISPLAY_ITEMS], 1):
         msg_lines.append(f"{idx}. [{item['source']}] {item['title']} {item['time']} {shorten_url(item['link'])}")
-    return '\n'.join(msg_lines)
+    return '\n\n'.join(msg_lines) if len(msg_lines) > 3 else '\n'.join(msg_lines)
 
 # --- 政要行程功能 (跨專案) ---
 def fetch_itinerary_from_repo_a():
@@ -104,7 +104,7 @@ def format_itinerary_block(itinerary):
             block += f"\n\n- [{item.get('機關', '未知')}] {item.get('官階', '')}\n  時間：{item.get('時間', '')}\n  行程：{item.get('行程', '')}\n  關鍵字：{item.get('關鍵字', '')}"
         return block
     else:
-        return f"【政要公開行程通知】\n日期：{date_str}\n今日無符合基隆轄區關鍵字的政要行程。"
+        return f"【政要公開行程通知】\n日期：{date_str}\n今日無符合基隆區處轄區的政要行程。"
 
 # --- 主程式：合併單一訊息發送（政要行程在前，新聞在後） ---
 def main():
