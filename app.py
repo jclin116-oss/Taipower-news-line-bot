@@ -64,10 +64,18 @@ def fetch_google_news(keywords_str, hours):
 def format_news_block(news_list):
     now_str = (datetime.utcnow() + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M")
     if not news_list: return f"【基隆區處轄區重點新聞輿情】\n{now_str}\n尚無新新聞。"
-    msg_lines = [f"【基隆區處轄區重點新聞輿情】", f"時間：{now_str}", f"共 {len(news_list)} 則新聞\n"]
+    
+    # 讓標題、時間、數量緊密排列，僅在數量下方空一行
+    msg_lines = [
+        f"【基隆區處轄區重點新聞輿情】",
+        f"時間：{now_str}",
+        f"共 {len(news_list)} 則新聞\n"
+    ]
+    
     for idx, item in enumerate(news_list[:MAX_DISPLAY_ITEMS], 1):
-        msg_lines.append(f"{idx}. [{item['source']}] {item['title']} {item['time']} {shorten_url(item['link'])}")
-    return '\n\n'.join(msg_lines) if len(msg_lines) > 3 else '\n'.join(msg_lines)
+        msg_lines.append(f"{idx}. [{item['source']}] {item['title']}\n{item['time']} {shorten_url(item['link'])}")
+        
+    return '\n'.join(msg_lines)
 
 # --- 政要行程功能 (跨專案) ---
 def fetch_itinerary_from_repo_a():
