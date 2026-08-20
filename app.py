@@ -15,9 +15,9 @@ LINE_CHANNEL_ACCESS_TOKEN = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN')
 LINE_USER_ID = os.environ.get('LINE_USER_ID')
 GH_PAT = os.environ.get('GH_PAT') # 跨專案讀取權限
 
-# REPO A 的資訊 (請修改這裡的名稱)
+# REPO A 的資訊
 REPO_A_OWNER = "jclin116-oss"
-REPO_A_NAME = "Dignitary-s-schedule-linebot" # <<< 請務必填入你的 REPO A 名稱
+REPO_A_NAME = "Dignitary-s-schedule-linebot"
 
 DEFAULT_KEYWORDS = '基隆 台電, 汐止 台電, 瑞芳 台電, 新北萬里 台電, 金山 台電, 貢寮 台電, 雙溪 台電, 平溪 台電, 基隆區處, 停電 基隆, 停電 汐止, 跳電 基隆, 跳電 汐止, 基隆區營業處'
 SEARCH_HOURS = 24
@@ -75,13 +75,23 @@ def format_line_message(news_list, keywords_str, hours):
 def fetch_itinerary_from_repo_a():
     headers = {"Authorization": f"Bearer {GH_PAT}", "Accept": "application/vnd.github+json"}
     url = f"https://api.github.com/repos/{REPO_A_OWNER}/{REPO_A_NAME}/actions/artifacts"
+    
     res = requests.get(url, headers=headers)
+    if res.status_code != 200:
+        print(f"GitHub API 請求失敗，狀態碼: {res.status_code}，訊息: {res.text}")
+        return None
+        
     artifacts = res.json().get("artifacts", [])
     target = next((a for a in artifacts if a["name"] == "matched-results-artifact"), None)
-    if not target: return None
+    
+    if not target: 
+        print("API 連線成功，但找不到名稱為 matched-results-artifact 的檔案。現有的 Artifacts 名稱：", [a['name'] for a in artifacts])
+        return None
+        
     dl_res = requests.get(target["archive_download_url"], headers=headers)
     with zipfile.ZipFile(io.BytesIO(dl_res.content)) as z:
-        with z.open("matched_results.json") as f: return json.load(f)
+        with z.open("matched_results.json") as f: 
+            return json.load(f)
 
 # --- 主程式 ---
 def main():
@@ -100,6 +110,8 @@ def main():
             for item in items:
                 it_msg += f"\n[{item['機關']}] {item['官階']}\n時間：{item['時間']}\n行程：{item['行程']}\n關鍵字：{item['關鍵字']}\n"
             line_bot_api.push_message(LINE_USER_ID, TextSendMessage(text=it_msg))
+        else:
+            print("目前沒有符合的政要行程或資料未回傳。")
     except Exception as e: print(f"行程推播失敗: {e}")
 
 if __name__ == '__main__':
