@@ -25,4 +25,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: 執行新聞推播腳本
-        run: python app.py
+      env:
+        LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+        LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+      run: python app.py
