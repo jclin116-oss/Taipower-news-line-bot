@@ -64,10 +64,10 @@ def fetch_google_news(keywords_str, hours):
 def format_news_block(news_list):
     now_str = (datetime.utcnow() + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M")
     if not news_list:
-        return f"【基隆區處轄區-重點新聞輿情】\n時間：{now_str}\n尚無新新聞。"
+        return f"【基隆區處轄區-24小時內重點新聞輿情】\n時間：{now_str}\n尚無新聞。"
     
     msg_lines = [
-        "【基隆區處轄區-重點新聞輿情】",
+        "【基隆區處轄區-24小時內重點新聞輿情】",
         f"時間：{now_str}",
         f"共 {len(news_list)} 則新聞"
     ]
