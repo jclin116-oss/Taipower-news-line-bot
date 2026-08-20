@@ -119,7 +119,7 @@ def format_line_message(news_list, keywords_str, hours):
     print(f"開始縮短 {len(display_news)} 則新聞網址...")
     for idx, item in enumerate(display_news, 1):
         short_url = shorten_url(item['link'])
-        news_block = f"{idx}. [{item['source']}] {item['title']}\n⏰ {item['time']} 🔗 {short_url}"
+        news_block = f"{idx}. [{item['source']}] {item['title']}\n {item['time']}  {short_url}"
         msg_lines.append(news_block)
         
         if idx < len(display_news):
