@@ -3,19 +3,17 @@ import zipfile
 import io
 import json
 import requests
-import time
 from datetime import datetime, timedelta
 from xml.etree import ElementTree
 from linebot import LineBotApi
-from linebot.exceptions import LineBotApiError
 from linebot.models import TextSendMessage
 
 # --- 設定環境變數 ---
 LINE_CHANNEL_ACCESS_TOKEN = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN')
 LINE_USER_ID = os.environ.get('LINE_USER_ID')
-GH_PAT = os.environ.get('GH_PAT') # 跨專案讀取權限
+GH_PAT = os.environ.get('GH_PAT')
 
-# REPO A 的資訊
+# REPO A 的設定
 REPO_A_OWNER = "jclin116-oss"
 REPO_A_NAME = "Dignitary-s-schedule-linebot"
 
@@ -23,6 +21,7 @@ DEFAULT_KEYWORDS = '基隆 台電, 汐止 台電, 瑞芳 台電, 新北萬里 �
 SEARCH_HOURS = 24
 MAX_DISPLAY_ITEMS = 15
 
+# 初始化 LINE Bot (注意: 如有需要可依提示升級為 v3 版本，目前維持現有邏輯)
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 
 # --- 新聞相關功能 ---
@@ -39,7 +38,7 @@ def fetch_google_news(keywords_str, hours):
     all_news = []
     now_tw = datetime.utcnow() + timedelta(hours=8)
     time_limit_tw = now_tw - timedelta(hours=int(hours))
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+    headers = {'User-Agent': 'Mozilla/5.0'}
     for group in keyword_groups:
         url = f'https://news.google.com/rss/search?q={requests.utils.quote(group.replace(" ", " AND "))}&hl=zh-TW&gl=TW&ceid=TW:zh-Hant'
         try:
@@ -76,22 +75,23 @@ def fetch_itinerary_from_repo_a():
     headers = {"Authorization": f"Bearer {GH_PAT}", "Accept": "application/vnd.github+json"}
     url = f"https://api.github.com/repos/{REPO_A_OWNER}/{REPO_A_NAME}/actions/artifacts"
     
-    res = requests.get(url, headers=headers)
-    if res.status_code != 200:
-        print(f"GitHub API 請求失敗，狀態碼: {res.status_code}，訊息: {res.text}")
+    try:
+        res = requests.get(url, headers=headers)
+        if res.status_code != 200:
+            print(f"DEBUG: API 請求失敗，狀態碼: {res.status_code}")
+            return None
+            
+        artifacts = res.json().get("artifacts", [])
+        target = next((a for a in artifacts if a["name"] == "matched-results-artifact"), None)
+        if not target: return None
+            
+        dl_res = requests.get(target["archive_download_url"], headers=headers)
+        with zipfile.ZipFile(io.BytesIO(dl_res.content)) as z:
+            with z.open("matched_results.json") as f: 
+                return json.load(f)
+    except Exception as e:
+        print(f"DEBUG: 抓取過程發生異常: {e}")
         return None
-        
-    artifacts = res.json().get("artifacts", [])
-    target = next((a for a in artifacts if a["name"] == "matched-results-artifact"), None)
-    
-    if not target: 
-        print("API 連線成功，但找不到名稱為 matched-results-artifact 的檔案。現有的 Artifacts 名稱：", [a['name'] for a in artifacts])
-        return None
-        
-    dl_res = requests.get(target["archive_download_url"], headers=headers)
-    with zipfile.ZipFile(io.BytesIO(dl_res.content)) as z:
-        with z.open("matched_results.json") as f: 
-            return json.load(f)
 
 # --- 主程式 ---
 def main():
@@ -101,18 +101,26 @@ def main():
         line_bot_api.push_message(LINE_USER_ID, TextSendMessage(text=format_line_message(news, DEFAULT_KEYWORDS, SEARCH_HOURS)))
     except Exception as e: print(f"新聞推播失敗: {e}")
 
-    # 2. 執行政要行程推送
+    # 2. 執行政要行程推送 (強制回報狀態)
     try:
         itinerary = fetch_itinerary_from_repo_a()
-        if itinerary and itinerary.get("has_matched"):
-            items = itinerary["matched_items"]
-            it_msg = f"【政要行程關鍵字通知】\n日期：{itinerary['date']}\n發現 {len(items)} 筆行程：\n"
-            for item in items:
-                it_msg += f"\n[{item['機關']}] {item['官階']}\n時間：{item['時間']}\n行程：{item['行程']}\n關鍵字：{item['關鍵字']}\n"
-            line_bot_api.push_message(LINE_USER_ID, TextSendMessage(text=it_msg))
+        if itinerary:
+            date_str = itinerary.get('date', '未知日期')
+            items = itinerary.get("matched_items", [])
+            
+            if items:
+                it_msg = f"【政要行程關鍵字通知】\n日期：{date_str}\n發現 {len(items)} 筆行程：\n"
+                for item in items:
+                    it_msg += f"\n[{item.get('機關', '未知')}] {item.get('官階', '')}\n時間：{item.get('時間', '')}\n行程：{item.get('行程', '')}\n關鍵字：{item.get('關鍵字', '')}\n"
+            else:
+                it_msg = f"【政要行程關鍵字通知】\n日期：{date_str}\n今日無符合關鍵字的政要行程。"
         else:
-            print("目前沒有符合的政要行程或資料未回傳。")
-    except Exception as e: print(f"行程推播失敗: {e}")
+            it_msg = "【政要行程通知】\n目前無法抓取政要行程檔案 (可能是 REPO A 尚未產生 Artifact)。"
+            
+        line_bot_api.push_message(LINE_USER_ID, TextSendMessage(text=it_msg))
+    except Exception as e: 
+        print(f"行程推播失敗: {e}")
+        line_bot_api.push_message(LINE_USER_ID, TextSendMessage(text=f"【政要行程通知】\n執行發生錯誤：{e}"))
 
 if __name__ == '__main__':
     main()
