@@ -114,7 +114,7 @@ def format_itinerary_block(itinerary):
     
     msg_lines = [f"【政要公開行程】\n日期：{date_str}"]
     if has_matched:
-        msg_lines.append("🚨今日有政要前往本處轄區相關行程🚨")
+        msg_lines.append("⚠️今日有政要前往本處轄區相關行程⚠️")
     else:
         msg_lines.append("今日無前往本處轄區行程：")
         
