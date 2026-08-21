@@ -102,22 +102,21 @@ def fetch_itinerary_from_repo_a():
 def format_itinerary_block(itinerary):
     if not itinerary:
         now_str = (datetime.utcnow() + timedelta(hours=8)).strftime("%Y-%m-%d")
-        return f"【政要公開行程】\n日期：{now_str}\n目前無法抓取行程檔案（可能 REPO A 尚未產生）。"
+        return f"【政要公開行程動態】*{now_str} 行程資料抓取失敗*"
     
     date_str = itinerary.get('date', '未知日期')
     has_matched = itinerary.get('has_matched', False)
-    # 相容新舊欄位：優先讀取 all_items，若無則讀取舊版 matched_items
     items = itinerary.get("all_items", itinerary.get("matched_items", []))
     
-    if not items:
-        return f"【政要公開行程】\n日期：{date_str}\n今日無公開行程資料。"
+    status_str = "🚨有本處轄區行程🚨" if has_matched else "無本處轄區行程"
+    header = f"【政要公開行程動態】*{date_str} {status_str}*"
     
-    msg_lines = [f"【政要公開行程】\n日期：{date_str}"]
-    if has_matched:
-        msg_lines.append("⚠️今日有政要前往本處轄區相關行程⚠️")
-    else:
-        msg_lines.append("今日無前往本處轄區行程：")
-        
+    if not items:
+        return f"{header}\n今日無公開行程資料。"
+    
+    msg_lines = [header]
+    prev_agency = None
+    
     for item in items:
         agency = item.get('機關', '')
         role = item.get('官階', '')
@@ -126,11 +125,18 @@ def format_itinerary_block(itinerary):
         keywords = item.get('關鍵字', '')
         is_jurisdiction = item.get('is_jurisdiction', False)
         
-        # 標示轄區重點行程
-        tag = "🚨 [轄區] " if is_jurisdiction else "• "
-        line = f"\n{tag}[{agency}-{role}] {time_str}\n  {content}"
+        # 不同機關之間自動插入一個空行，維持閱讀排版
+        if prev_agency is not None and prev_agency != agency:
+            msg_lines.append("")
+        prev_agency = agency
+        
+        # 標頭與內文排在同一行
+        prefix = "🚨 " if is_jurisdiction else ""
+        line = f"• {prefix}[{agency}-{role}] {time_str} {content}".strip()
+        
         if keywords:
-            line += f"\n  (關鍵字：{keywords})"
+            line += f" (關鍵字：{keywords})"
+            
         msg_lines.append(line)
         
     return '\n'.join(msg_lines)
