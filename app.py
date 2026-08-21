@@ -105,15 +105,35 @@ def format_itinerary_block(itinerary):
         return f"【政要公開行程】\n日期：{now_str}\n目前無法抓取行程檔案（可能 REPO A 尚未產生）。"
     
     date_str = itinerary.get('date', '未知日期')
-    items = itinerary.get("matched_items", [])
+    has_matched = itinerary.get('has_matched', False)
+    # 相容新舊欄位：優先讀取 all_items，若無則讀取舊版 matched_items
+    items = itinerary.get("all_items", itinerary.get("matched_items", []))
     
-    if items:
-        block = f"【政要公開行程】\n日期：{date_str}\n發現 {len(items)} 筆行程："
-        for item in items:
-            block += f"\n\n- [{item.get('機關', '未知')}] {item.get('官階', '')}\n  時間：{item.get('時間', '')}\n  行程：{item.get('行程', '')}\n  關鍵字：{item.get('關鍵字', '')}"
-        return block
+    if not items:
+        return f"【政要公開行程】\n日期：{date_str}\n今日無公開行程資料。"
+    
+    msg_lines = [f"【政要公開行程】\n日期：{date_str}"]
+    if has_matched:
+        msg_lines.append("🚨今日有政要前往本處轄區相關行程🚨")
     else:
-        return f"【政要公開行程】\n日期：{date_str}\n今日無來訪基隆區處轄區的政要行程、經濟部、行政院)。"
+        msg_lines.append("今日無前往本處轄區行程：")
+        
+    for item in items:
+        agency = item.get('機關', '')
+        role = item.get('官階', '')
+        time_str = item.get('時間', '-')
+        content = item.get('行程', '')
+        keywords = item.get('關鍵字', '')
+        is_jurisdiction = item.get('is_jurisdiction', False)
+        
+        # 標示轄區重點行程
+        tag = "🚨 [轄區] " if is_jurisdiction else "• "
+        line = f"\n{tag}[{agency}-{role}] {time_str}\n  {content}"
+        if keywords:
+            line += f"\n  (關鍵字：{keywords})"
+        msg_lines.append(line)
+        
+    return '\n'.join(msg_lines)
 
 # 主程式：合併為單一訊息
 def main():
