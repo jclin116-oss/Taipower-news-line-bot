@@ -64,12 +64,12 @@ def fetch_google_news(keywords_str, hours):
 def format_news_block(news_list):
     now_str = (datetime.utcnow() + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M")
     if not news_list:
-        return f"【基隆區處轄區-24小時內重點新聞輿情】\n搜尋時間：{now_str}\n24小時內尚無本處轄區新聞。"
+        return f"【基隆區處轄區-24小時內重點新聞輿情】\n搜尋時間：{now_str}\n❌24小時內尚無本處轄區新聞。"
     
     msg_lines = [
         "【基隆區處轄區-24小時內重點新聞輿情】",
         f"搜尋時間：{now_str}",
-        f"共 {len(news_list)} 則相關新聞"
+        f"✅共 {len(news_list)} 則相關新聞"
     ]
     
     for idx, item in enumerate(news_list[:MAX_DISPLAY_ITEMS], 1):
@@ -108,7 +108,7 @@ def format_itinerary_block(itinerary):
     has_matched = itinerary.get('has_matched', False)
     items = itinerary.get("all_items", itinerary.get("matched_items", []))
     
-    status_str = "🚨有本處轄區行程" if has_matched else "無本處轄區行程"
+    status_str = "✅有本處轄區" if has_matched else "❌無本處轄區"
     header = f"【{date_str}政要公開行程動態】 : {status_str}"
     
     if not items:
