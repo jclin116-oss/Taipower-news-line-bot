@@ -8,12 +8,12 @@ from xml.etree import ElementTree
 from linebot import LineBotApi
 from linebot.models import TextSendMessage
 
-# --- 設定環境變數 ---
+#  設定環境變數 
 LINE_CHANNEL_ACCESS_TOKEN = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN')
 LINE_USER_ID = os.environ.get('LINE_USER_ID')
 GH_PAT = os.environ.get('GH_PAT')
 
-# REPO A 的設定
+# REPO A設定
 REPO_A_OWNER = "jclin116-oss"
 REPO_A_NAME = "Dignitary-s-schedule-linebot"
 
@@ -23,7 +23,7 @@ MAX_DISPLAY_ITEMS = 15
 
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 
-# --- 新聞相關功能 ---
+# 新聞功能
 def shorten_url(url):
     try:
         api_url = f"http://tinyurl.com/api-create.php?url={requests.utils.quote(url)}"
@@ -64,12 +64,12 @@ def fetch_google_news(keywords_str, hours):
 def format_news_block(news_list):
     now_str = (datetime.utcnow() + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M")
     if not news_list:
-        return f"【基隆區處轄區-24小時內重點新聞輿情】\n時間：{now_str}\n尚無新聞。"
+        return f"【基隆區處轄區-24小時內重點新聞輿情】\n時間：{now_str}\n尚無本處轄區新聞。"
     
     msg_lines = [
         "【基隆區處轄區-24小時內重點新聞輿情】",
         f"時間：{now_str}",
-        f"共 {len(news_list)} 則新聞"
+        f"共 {len(news_list)} 則相關新聞"
     ]
     
     for idx, item in enumerate(news_list[:MAX_DISPLAY_ITEMS], 1):
@@ -77,7 +77,7 @@ def format_news_block(news_list):
         
     return '\n'.join(msg_lines)
 
-# --- 政要行程功能 (跨專案) ---
+# 政要行程功能(REPO A)
 def fetch_itinerary_from_repo_a():
     headers = {"Authorization": f"Bearer {GH_PAT}", "Accept": "application/vnd.github+json"}
     url = f"https://api.github.com/repos/{REPO_A_OWNER}/{REPO_A_NAME}/actions/artifacts"
@@ -113,23 +113,23 @@ def format_itinerary_block(itinerary):
             block += f"\n\n- [{item.get('機關', '未知')}] {item.get('官階', '')}\n  時間：{item.get('時間', '')}\n  行程：{item.get('行程', '')}\n  關鍵字：{item.get('關鍵字', '')}"
         return block
     else:
-        return f"【政要公開行程】\n日期：{date_str}\n今日無來訪基隆區處轄區的政要行程。"
+        return f"【政要公開行程】\n日期：{date_str}\n今日無來訪基隆區處轄區的政要行程、經濟部、行政院)。"
 
-# --- 主程式：合併單一訊息發送 ---
+# 主程式：合併為單一訊息
 def main():
     try:
-        # 1. 取得政要行程內容
+        # 1.取得政要行程內容
         itinerary = fetch_itinerary_from_repo_a()
         itinerary_text = format_itinerary_block(itinerary)
         
-        # 2. 取得新聞內容
+        # 2.取得新聞內容
         news = fetch_google_news(DEFAULT_KEYWORDS, SEARCH_HOURS)
         news_text = format_news_block(news)
         
-        # 3. 結合成一則訊息（最上方加上「系統定時自動化通知」）
+        # 3.結合成一則訊息（最上方加上「自動化通知」）
         combined_message = f"系統定時自動化通知\n\n{itinerary_text}\n\n{news_text}"
         
-        # 4. 發送單一 LINE 訊息
+        # 4.LINE合併發送為一則訊息
         line_bot_api.push_message(LINE_USER_ID, TextSendMessage(text=combined_message))
         
     except Exception as e:
