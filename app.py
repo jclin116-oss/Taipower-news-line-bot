@@ -108,8 +108,8 @@ def format_itinerary_block(itinerary):
     has_matched = itinerary.get('has_matched', False)
     items = itinerary.get("all_items", itinerary.get("matched_items", []))
     
-    status_str = "🚨有本處轄區行程🚨" if has_matched else "無本處轄區行程"
-    header = f"【政要公開行程動態】: {status_str}{date_str}"
+    status_str = "🚨有本處轄區行程" if has_matched else "無本處轄區行程"
+    header = f"【政要公開行程動態】 :  {status_str}{date_str}"
     
     if not items:
         return f"{header}\n今日無公開行程資料。"
@@ -132,7 +132,7 @@ def format_itinerary_block(itinerary):
         
         # 標頭與內文排在同一行
         prefix = "🚨 " if is_jurisdiction else ""
-        line = f"• {prefix}[{agency}-{role}] {time_str} {content}".strip()
+        line = f"   • {prefix}[{agency}-{role}] {time_str} {content}".strip()
         
         if keywords:
             line += f" (關鍵字：{keywords})"
