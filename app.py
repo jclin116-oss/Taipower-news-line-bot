@@ -109,7 +109,7 @@ def format_itinerary_block(itinerary):
     items = itinerary.get("all_items", itinerary.get("matched_items", []))
     
     status_str = "✅有本處轄區" if has_matched else "❌無本處轄區"
-    header = f"【{date_str}政要公開行程動態】 : {status_str}"
+    header = f"【{date_str}政要公開行程動態】\n{status_str}"
     
     if not items:
         return f"{header}\n今日無公開行程資料。"
