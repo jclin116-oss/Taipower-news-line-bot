@@ -125,14 +125,10 @@ def format_itinerary_block(itinerary):
         keywords = item.get('關鍵字', '')
         is_jurisdiction = item.get('is_jurisdiction', False)
         
-        # 不同機關之間自動插入一個空行，維持閱讀排版
-        if prev_agency is not None and prev_agency != agency:
-            msg_lines.append("")
-        prev_agency = agency
-        
+       
         # 標頭與內文排在同一行
         prefix = "🚨 " if is_jurisdiction else ""
-        line = f"   • {prefix}[{agency}-{role}] {time_str} {content}".strip()
+        line = f"• {prefix}[{agency}-{role}] {time_str} {content}".strip()
         
         if keywords:
             line += f" (關鍵字：{keywords})"
