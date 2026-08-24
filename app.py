@@ -45,7 +45,7 @@ def analyze_news_with_ai(title):
 請直接輸出建議內容，不要附加額外說明、開場白或引號。
 """
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-3.6-flash',
             contents=prompt,
         )
         result = response.text.strip()
