@@ -150,6 +150,11 @@ def main():
         
         # 3.結合成一則訊息（最上方加上「自動化通知」）
         combined_message = f"系統定時自動化通知\n\n{itinerary_text}\n\n{news_text}"
+
+        # --- 新增：LINE 5000 字限制截斷機制 ---
+        if len(combined_message) > 4000:
+            combined_message = combined_message[:3900] + "\n\n...(訊息過長，自動截斷)"
+        # ---------------------------------------------
         
         # 4.LINE合併發送為一則訊息
         line_bot_api.push_message(LINE_USER_ID, TextSendMessage(text=combined_message))
