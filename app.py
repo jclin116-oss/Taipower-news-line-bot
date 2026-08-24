@@ -5,13 +5,15 @@ import json
 import requests
 from datetime import datetime, timezone, timedelta
 from xml.etree import ElementTree
+from google import genai
 from linebot import LineBotApi
 from linebot.models import TextSendMessage
 
-#  設定環境變數 
+# 設定環境變數 
 LINE_CHANNEL_ACCESS_TOKEN = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN')
 LINE_USER_ID = os.environ.get('LINE_USER_ID')
 GH_PAT = os.environ.get('GH_PAT')
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 
 # REPO A設定
 REPO_A_OWNER = "jclin116-oss"
@@ -22,6 +24,35 @@ SEARCH_HOURS = 24
 MAX_DISPLAY_ITEMS = 15
 
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
+
+# AI 分析功能
+def analyze_news_with_ai(title):
+    if not GEMINI_API_KEY:
+        return None
+    
+    try:
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        prompt = f"""
+你是一位台電基隆區營業處業務組與公共關係專家。請分析以下新聞標題：
+「{title}」
+
+任務與邏輯：
+1. 若新聞涉及大型活動、新景點/設施開幕、觀光活動（如：基隆塔、燈會、市集、國家考試等），請簡短建議：「建議注意周邊設備狀況，確保活動期間穩定供電。」
+2. 若新聞涉及負面輿情或需關注事件（如：竊電、無預警停電、跳電、民眾陳情、工安事故、挖斷電纜等），請提供 15 字以內的實務處置建議（例如：派員現勘確認、預先釐清事故原因等）。
+3. 若為純粹無關之一般新聞，請僅回覆 "無處置建議"。
+
+請直接輸出建議內容，不要附加額外說明、開場白或引號。
+"""
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+        )
+        result = response.text.strip()
+        if result and result != "NONE":
+            return result
+    except Exception as e:
+        print(f"DEBUG: AI 分析失敗: {e}")
+    return None
 
 # 新聞功能
 def shorten_url(url):
@@ -73,7 +104,14 @@ def format_news_block(news_list):
     ]
     
     for idx, item in enumerate(news_list[:MAX_DISPLAY_ITEMS], 1):
-        msg_lines.append(f"\n{idx}. [{item['source']}] {item['title']}\n{item['time']} {shorten_url(item['link'])}")
+        line = f"\n{idx}. [{item['source']}] {item['title']}\n{item['time']} {shorten_url(item['link'])}"
+        
+        # 呼叫 AI 進行分析
+        ai_advice = analyze_news_with_ai(item['title'])
+        if ai_advice:
+            line += f"\n💡【AI 處置建議】{ai_advice}"
+            
+        msg_lines.append(line)
         
     return '\n'.join(msg_lines)
 
@@ -115,7 +153,6 @@ def format_itinerary_block(itinerary):
         return f"{header}\n今日無公開行程資料。"
     
     msg_lines = [header]
-    prev_agency = None
     
     for item in items:
         agency = item.get('機關', '')
@@ -125,8 +162,6 @@ def format_itinerary_block(itinerary):
         keywords = item.get('關鍵字', '')
         is_jurisdiction = item.get('is_jurisdiction', False)
         
-       
-        # 標頭與內文排在同一行
         prefix = "🚨 " if is_jurisdiction else ""
         line = f"• {prefix}[{agency}-{role}] {time_str} {content}".strip()
         
@@ -151,7 +186,7 @@ def main():
         # 3.結合成一則訊息（最上方加上「自動化通知」）
         combined_message = f"系統定時自動化通知\n\n{itinerary_text}\n\n{news_text}"
 
-        # --- 新增：LINE 5000 字限制截斷機制 ---
+        # --- LINE 5000 字限制截斷機制 ---
         if len(combined_message) > 4000:
             combined_message = combined_message[:3900] + "\n\n...(訊息過長，自動截斷)"
         # ---------------------------------------------
