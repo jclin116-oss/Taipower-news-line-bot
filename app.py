@@ -109,7 +109,7 @@ def format_news_block(news_list):
         # 呼叫 AI 進行分析
         ai_advice = analyze_news_with_ai(item['title'])
         if ai_advice:
-            line += f"\n💡【AI 處置建議】{ai_advice}"
+            line += f"\n💡【AI建議】{ai_advice}"
             
         msg_lines.append(line)
         
