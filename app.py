@@ -21,7 +21,7 @@ REPO_A_OWNER = "jclin116-oss"
 REPO_A_NAME = "Dignitary-s-schedule-linebot"
 
 DEFAULT_KEYWORDS = '基隆 台電, 汐止 台電, 汐止 水電, 瑞芳 台電, 新北萬里 台電, 金山 台電, 貢寮 台電, 雙溪 台電, 平溪 台電, 基隆區處, 停電 基隆, 停電 汐止, 跳電 基隆, 跳電 汐止, 基隆區營業處'
-SEARCH_HOURS = 120
+SEARCH_HOURS = 24
 MAX_DISPLAY_ITEMS = 15
 
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
@@ -39,7 +39,7 @@ def analyze_news_with_ai(title):
 
 任務與邏輯：
 1. 若新聞涉及基隆大型活動、新景點/設施開幕、觀光活動（如：普渡、燈會、市集、國家考試等），請簡短建議：「建議注意周邊設備狀況，確保活動期間穩定供電。」
-2. 若新聞涉及負面輿情或需關注事件（如：竊電、無預警停電、跳電、民眾陳情、工安事故、挖斷電纜等），請提供 15 字以內的實務處置建議（例如：派員現勘確認、預先釐清事故原因等）。
+2. 若新聞涉及負面輿情或需關注事件（如：竊電、無預警停電、跳電、民眾陳情、工安事故、挖斷電纜等），請提供 15 字以內的實務處置建議（例如：盡速派員現勘確認、預先釐清原因等）。
 3. 若為純粹無關之一般新聞，請僅回覆 "無處置建議"。
 
 請直接輸出建議內容，不要附加額外說明、開場白或引號。
@@ -111,10 +111,10 @@ def fetch_google_news(keywords_str, hours):
 def format_news_block(news_list):
     now_str = (datetime.now(timezone.utc) + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M")
     if not news_list:
-        return f"【基隆區處轄區-120小時內重點新聞輿情】\n搜尋時間：{now_str}\n❌120小時內尚無本處轄區新聞。"
+        return f"【基隆區處轄區-24小時內重點新聞輿情】\n搜尋時間：{now_str}\n❌24小時內尚無本處轄區新聞。"
     
     msg_lines = [
-        "【基隆區處轄區-120小時內重點新聞輿情】",
+        "【基隆區處轄區-24小時內重點新聞輿情】",
         f"搜尋時間：{now_str}",
         f"✅共 {len(news_list)} 則相關新聞"
     ]
@@ -125,7 +125,7 @@ def format_news_block(news_list):
         # 呼叫 AI 進行分析
         ai_advice = analyze_news_with_ai(item['title'])
         if ai_advice:
-            line += f"\n💡【AI建議】{ai_advice}"
+            line += f"\n💡【AI提醒建議】{ai_advice}"
             
         msg_lines.append(line)
         
