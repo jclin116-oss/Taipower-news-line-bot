@@ -3,7 +3,7 @@ import zipfile
 import io
 import json
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from xml.etree import ElementTree
 from linebot import LineBotApi
 from linebot.models import TextSendMessage
@@ -35,7 +35,7 @@ def shorten_url(url):
 def fetch_google_news(keywords_str, hours):
     keyword_groups = [g.strip() for g in keywords_str.replace('，', ',').split(',') if g.strip()]
     all_news = []
-    now_tw = datetime.utcnow() + timedelta(hours=8)
+    now_tw = datetime.now(timezone.utc) + timedelta(hours=8)
     time_limit_tw = now_tw - timedelta(hours=int(hours))
     headers = {'User-Agent': 'Mozilla/5.0'}
     for group in keyword_groups:
@@ -62,7 +62,7 @@ def fetch_google_news(keywords_str, hours):
     return sorted(unique_news, key=lambda x: x['timestamp'], reverse=True)
 
 def format_news_block(news_list):
-    now_str = (datetime.utcnow() + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M")
+    now_str = (datetime.now(timezone.utc) + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M")
     if not news_list:
         return f"【基隆區處轄區-24小時內重點新聞輿情】\n搜尋時間：{now_str}\n❌24小時內尚無本處轄區新聞。"
     
@@ -101,7 +101,7 @@ def fetch_itinerary_from_repo_a():
 
 def format_itinerary_block(itinerary):
     if not itinerary:
-        now_str = (datetime.utcnow() + timedelta(hours=8)).strftime("%Y-%m-%d")
+        now_str = (datetime.now(timezone.utc) + timedelta(hours=8)).strftime("%Y-%m-%d")
         return f"【政要公開行程動態】*{now_str} 行程資料抓取失敗*"
     
     date_str = itinerary.get('date', '未知日期')
