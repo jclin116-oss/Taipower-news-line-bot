@@ -20,7 +20,7 @@ GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 REPO_A_OWNER = "jclin116-oss"
 REPO_A_NAME = "Dignitary-s-schedule-linebot"
 
-DEFAULT_KEYWORDS = '基隆 台電, 汐止 台電, 汐止 水電, 瑞芳 台電, 新北萬里 台電, 金山 台電, 貢寮 台電, 雙溪 台電, 平溪 台電, 基隆區處, 停電 基隆, 停電 汐止, 跳電 基隆, 跳電 汐止, 基隆區營業處'
+DEFAULT_KEYWORDS = '所長 台電, 汐止 台電, 汐止 水電, 瑞芳 台電, 新北萬里 台電, 金山 台電, 貢寮 台電, 雙溪 台電, 平溪 台電, 基隆區處, 停電 基隆, 停電 汐止, 跳電 基隆, 跳電 汐止, 基隆區營業處'
 SEARCH_HOURS = 11
 MAX_DISPLAY_ITEMS = 15
 
