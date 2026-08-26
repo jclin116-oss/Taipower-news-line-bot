@@ -21,7 +21,7 @@ REPO_A_OWNER = "jclin116-oss"
 REPO_A_NAME = "Dignitary-s-schedule-linebot"
 
 DEFAULT_KEYWORDS = '基隆 台電, 汐止 台電, 汐止 水電, 瑞芳 台電, 新北萬里 台電, 金山 台電, 貢寮 台電, 雙溪 台電, 平溪 台電, 基隆區處, 停電 基隆, 停電 汐止, 跳電 基隆, 跳電 汐止, 基隆區營業處'
-SEARCH_HOURS = 24
+SEARCH_HOURS = 10
 MAX_DISPLAY_ITEMS = 15
 
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
@@ -111,10 +111,10 @@ def fetch_google_news(keywords_str, hours):
 def format_news_block(news_list):
     now_str = (datetime.now(timezone.utc) + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M")
     if not news_list:
-        return f"【基隆區處轄區-24小時內重點新聞輿情】\n搜尋時間：{now_str}\n❌24小時內尚無本處轄區新聞。"
+        return f"【基隆區處轄區-今日05:00~15:00區間新聞輿情】\n搜尋時間：{now_str}\n❌10小時內尚無本處轄區新聞。"
     
     msg_lines = [
-        "【基隆區處轄區-24小時內重點新聞輿情】",
+        "【基隆區處轄區-今日05:00~15:00區間新聞輿情】",
         f"搜尋時間：{now_str}",
         f"✅共 {len(news_list)} 則相關新聞"
     ]
@@ -191,23 +191,24 @@ def format_itinerary_block(itinerary):
 # 主程式：合併為單一訊息
 def main():
     try:
-        # 1.取得政要行程內容
-        itinerary = fetch_itinerary_from_repo_a()
-        itinerary_text = format_itinerary_block(itinerary)
+        # --- 暫時停用政要行程（若要恢復，取消下方兩行註解即可）---
+        # itinerary = fetch_itinerary_from_repo_a()
+        # itinerary_text = format_itinerary_block(itinerary)
         
-        # 2.取得新聞內容
+        # 1. 取得新聞內容
         news = fetch_google_news(DEFAULT_KEYWORDS, SEARCH_HOURS)
         news_text = format_news_block(news)
         
-        # 3.結合成一則訊息（最上方加上「自動化通知」）
-        combined_message = f"系統定時自動化通知\n\n{itinerary_text}\n\n{news_text}"
+        # 2. 結合成一則訊息（目前僅包含新聞）
+        # 若未來恢復政要行程，改回：combined_message = f"系統定時自動化通知\n\n{itinerary_text}\n\n{news_text}"
+        combined_message = f"系統定時自動化通知\n\n{news_text}"
 
         # --- LINE 5000 字限制截斷機制 ---
         if len(combined_message) > 4000:
             combined_message = combined_message[:3900] + "\n\n...(訊息過長，自動截斷)"
         # ---------------------------------------------
         
-        # 4.LINE合併發送為一則訊息
+        # 3. LINE 合併發送為一則訊息
         line_bot_api.push_message(LINE_USER_ID, TextSendMessage(text=combined_message))
         
     except Exception as e:
