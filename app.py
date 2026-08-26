@@ -109,12 +109,22 @@ def fetch_google_news(keywords_str, hours):
     return sorted(unique_news, key=lambda x: x['timestamp'], reverse=True)
 
 def format_news_block(news_list):
-    now_str = (datetime.now(timezone.utc) + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M")
+    # 1. 取得當前台灣時間，並計算 SEARCH_HOURS (10小時) 前的時間點
+    now_tw = datetime.now(timezone.utc) + timedelta(hours=8)
+    start_tw = now_tw - timedelta(hours=SEARCH_HOURS)
+
+    now_str = now_tw.strftime("%Y-%m-%d %H:%M")
+    start_time_str = start_tw.strftime("%H:%M")
+    end_time_str = now_tw.strftime("%H:%M")
+
+    # 2. 將時間區間動態帶入標頭
+    header = f"【基隆區處轄區-今日{start_time_str}~{end_time_str}區間新聞輿情】"
+
     if not news_list:
-        return f"【基隆區處轄區-今日05:00~15:00區間新聞輿情】\n搜尋時間：{now_str}\n❌10小時內尚無本處轄區新聞。"
-    
+        return f"{header}\n搜尋時間：{now_str}\n❌{SEARCH_HOURS}小時內尚無本處轄區新聞。"
+
     msg_lines = [
-        "【基隆區處轄區-今日05:00~15:00區間新聞輿情】",
+        header,
         f"搜尋時間：{now_str}",
         f"✅共 {len(news_list)} 則相關新聞"
     ]
