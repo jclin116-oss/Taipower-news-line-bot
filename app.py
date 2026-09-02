@@ -211,7 +211,7 @@ def main():
         
         # 2. 結合成一則訊息（目前僅包含新聞）
         # 若未來恢復政要行程，改回：combined_message = f"系統定時自動化通知\n\n{itinerary_text}\n\n{news_text}"
-        combined_message = f"系統定時自動化通知\n\n{news_text}"
+        combined_message = f"{news_text}"
 
         # --- LINE 5000 字限制截斷機制 ---
         if len(combined_message) > 4000:
