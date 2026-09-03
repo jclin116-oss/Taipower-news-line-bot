@@ -40,7 +40,7 @@ def analyze_news_with_ai(title):
 任務與邏輯：
 1. 若新聞涉及基隆大型活動、新景點/設施開幕、觀光活動（如：普渡、燈會、市集、國家考試等），請簡短建議：「建議注意周邊設備狀況，確保活動期間穩定供電。」
 2. 若新聞涉及負面輿情或需關注事件（如：竊電、無預警停電、跳電、民眾陳情、工安事故、挖斷電纜等），請提供 15 字以內的實務處置建議（例如：盡速派員現勘確認、預先釐清原因等）。
-3. 若為純粹無關之一般新聞，請僅回覆 "無處置建議"。
+3. 若為純粹無關之一般新聞或一般正面/公益新聞，請僅回覆 "無處置建議(非負面輿情)"。
 
 請直接輸出建議內容，不要附加額外說明、開場白或引號。
 """
@@ -49,7 +49,7 @@ def analyze_news_with_ai(title):
             contents=prompt,
         )
         result = response.text.strip()
-        if result and result != "NONE" and result != "無處置建議":
+        if result and result != "NONE":
             return result
     except Exception as e:
         print(f"DEBUG: AI 分析失敗: {e}")
@@ -135,7 +135,10 @@ def format_news_block(news_list):
         # 呼叫 AI 進行分析
         ai_advice = analyze_news_with_ai(item['title'])
         if ai_advice:
-            line += f"\n🚨【AI建議】{ai_advice}"
+            if "無處置建議" in ai_advice:
+                line += f"\n🙂【AI建議】{ai_advice}"
+            else:
+                line += f"\n🚨【AI建議】{ai_advice}"
             
         msg_lines.append(line)
         
