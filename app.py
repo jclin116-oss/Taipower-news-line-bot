@@ -3,6 +3,7 @@ import zipfile
 import io
 import json
 import requests
+import time
 from datetime import datetime, timezone, timedelta
 from email.utils import parsedate_to_datetime
 from xml.etree import ElementTree
@@ -26,14 +27,12 @@ MAX_DISPLAY_ITEMS = 15
 
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 
-# AI 分析功能
+# AI 分析功能（含 503 重試機制）
 def analyze_news_with_ai(title):
     if not GEMINI_API_KEY:
         return None
     
-    try:
-        client = genai.Client(api_key=GEMINI_API_KEY)
-        prompt = f"""
+    prompt = f"""
 你是一位台電基隆區營業處業務組與公共關係專家。請分析以下新聞標題：
 「{title}」
 
@@ -44,15 +43,27 @@ def analyze_news_with_ai(title):
 
 請直接輸出建議內容，不要附加額外說明、開場白或引號。
 """
-        response = client.models.generate_content(
-            model='gemini-3.6-flash',
-            contents=prompt,
-        )
-        result = response.text.strip()
-        if result and result != "NONE":
-            return result
-    except Exception as e:
-        print(f"DEBUG: AI 分析失敗: {e}")
+
+    # 遇到 503 伺服器忙碌時，最多重試 3 次
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            client = genai.Client(api_key=GEMINI_API_KEY)
+            response = client.models.generate_content(
+                model='gemini-3.6-flash',
+                contents=prompt,
+            )
+            result = response.text.strip()
+            if result and result != "NONE":
+                return result
+            break # 若成功取得回應但為空，直接跳出
+        except Exception as e:
+            print(f"DEBUG: AI 分析嘗試第 {attempt + 1} 次失敗: {e}")
+            if "503" in str(e) and attempt < max_retries - 1:
+                time.sleep(2) # 等待 2 秒後重試
+                continue
+            break
+            
     return None
 
 # 新聞功能
