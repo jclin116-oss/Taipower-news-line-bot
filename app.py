@@ -10,6 +10,8 @@ from xml.etree import ElementTree
 from google import genai
 from linebot import LineBotApi
 from linebot.models import TextSendMessage
+from google import genai
+from google.genai import types
 
 # 設定環境變數 
 LINE_CHANNEL_ACCESS_TOKEN = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN')
