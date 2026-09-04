@@ -142,7 +142,7 @@ def format_news_block(news_list):
     msg_lines = [
         header,
         f"搜尋時間：{now_str}",
-        f"✅共 {len(news_list)} 則相關新聞 \n🚨【AI總結建議】警戒潛在供電災情:路樹傾倒"
+        f"✅共 {len(news_list)} 則相關新聞"
     ]
     
     for idx, item in enumerate(news_list[:MAX_DISPLAY_ITEMS], 1):
