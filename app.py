@@ -27,7 +27,7 @@ MAX_DISPLAY_ITEMS = 15
 
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 
-# AI 分析功能（含 503 重試機制）
+# AI 分析功能（含 503 重試與 15 秒 Request Timeout）
 def analyze_news_with_ai(title):
     if not GEMINI_API_KEY:
         return None
@@ -44,23 +44,26 @@ def analyze_news_with_ai(title):
 請直接輸出建議內容，不要附加額外說明、開場白或引號。
 """
 
-    # 遇到 503 伺服器忙碌時，最多重試 3 次
     max_retries = 3
     for attempt in range(max_retries):
         try:
             client = genai.Client(api_key=GEMINI_API_KEY)
+            
+            # 維持原本的 gemini-3.6-flash，僅加上 request_options 設定 15 秒逾時
             response = client.models.generate_content(
                 model='gemini-3.6-flash',
                 contents=prompt,
+                request_options=types.RequestOptions(timeout=15.0)
             )
-            result = response.text.strip()
+            
+            result = response.text.strip() if response.text else None
             if result and result != "NONE":
                 return result
-            break # 若成功取得回應但為空，直接跳出
+            break
         except Exception as e:
-            print(f"DEBUG: AI 分析嘗試第 {attempt + 1} 次失敗: {e}")
-            if "503" in str(e) and attempt < max_retries - 1:
-                time.sleep(2) # 等待 2 秒後重試
+            print(f"DEBUG: AI 分析嘗試第 {attempt + 1} 次失敗: {e}", flush=True)
+            if ("503" in str(e) or "timeout" in str(e).lower()) and attempt < max_retries - 1:
+                time.sleep(2)
                 continue
             break
             
