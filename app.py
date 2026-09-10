@@ -7,13 +7,14 @@ import time
 from datetime import datetime, timezone, timedelta
 from email.utils import parsedate_to_datetime
 from xml.etree import ElementTree
-from google import genai
-from linebot import LineBotApi
-from linebot.models import TextSendMessage
+
 from google import genai
 from google.genai import types
 
-# 設定環境變數 
+# 升級至 LineBot v3 寫法
+from linebot.v3.messaging import Configuration, ApiClient, MessagingApi, PushMessageRequest, TextMessage
+
+# 設定環境變數
 LINE_CHANNEL_ACCESS_TOKEN = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN')
 LINE_USER_ID = os.environ.get('LINE_USER_ID')
 GH_PAT = os.environ.get('GH_PAT')
@@ -27,9 +28,10 @@ DEFAULT_KEYWORDS = '基隆 台電, 汐止 台電, 汐止 水電, 瑞芳 台電, 
 SEARCH_HOURS = 11
 MAX_DISPLAY_ITEMS = 15
 
-line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
+# LineBot v3 初始化設定
+configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
 
-# AI 分析功能（含 503 重試與 15 秒 Request Timeout）
+# AI 分析功能（含 503/429 重試與 15 秒 Request Timeout）
 def analyze_news_with_ai(title):
     if not GEMINI_API_KEY:
         return None
@@ -49,13 +51,16 @@ def analyze_news_with_ai(title):
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            client = genai.Client(api_key=GEMINI_API_KEY)
+            # 透過 http_options 設定 15 秒逾時（單位為毫秒：15000）
+            client = genai.Client(
+                api_key=GEMINI_API_KEY,
+                http_options=types.HttpOptions(timeout=15000)
+            )
             
-            # 維持原本的 gemini-3.6-flash，僅加上 request_options 設定 15 秒逾時
+            # 維持指定模型
             response = client.models.generate_content(
                 model='gemini-3.6-flash',
-                contents=prompt,
-                request_options=types.RequestOptions(timeout=15.0)
+                contents=prompt
             )
             
             result = response.text.strip() if response.text else None
@@ -64,7 +69,8 @@ def analyze_news_with_ai(title):
             break
         except Exception as e:
             print(f"DEBUG: AI 分析嘗試第 {attempt + 1} 次失敗: {e}", flush=True)
-            if ("503" in str(e) or "timeout" in str(e).lower()) and attempt < max_retries - 1:
+            # 加入 429 判斷以應對速率限制
+            if ("503" in str(e) or "429" in str(e) or "timeout" in str(e).lower()) and attempt < max_retries - 1:
                 time.sleep(2)
                 continue
             break
@@ -220,16 +226,11 @@ def format_itinerary_block(itinerary):
 # 主程式：合併為單一訊息
 def main():
     try:
-        # --- 暫時停用政要行程（若要恢復，取消下方兩行註解即可）---
-        # itinerary = fetch_itinerary_from_repo_a()
-        # itinerary_text = format_itinerary_block(itinerary)
-        
         # 1. 取得新聞內容
         news = fetch_google_news(DEFAULT_KEYWORDS, SEARCH_HOURS)
         news_text = format_news_block(news)
         
         # 2. 結合成一則訊息（目前僅包含新聞）
-        # 若未來恢復政要行程，改回：combined_message = f"系統定時自動化通知\n\n{itinerary_text}\n\n{news_text}"
         combined_message = f"{news_text}"
 
         # --- LINE 5000 字限制截斷機制 ---
@@ -237,8 +238,15 @@ def main():
             combined_message = combined_message[:3900] + "\n\n...(訊息過長，自動截斷)"
         # ---------------------------------------------
         
-        # 3. LINE 合併發送為一則訊息
-        line_bot_api.push_message(LINE_USER_ID, TextSendMessage(text=combined_message))
+        # 3. LINE v3 合併發送為一則訊息
+        with ApiClient(configuration) as api_client:
+            line_bot_api = MessagingApi(api_client)
+            line_bot_api.push_message(
+                PushMessageRequest(
+                    to=LINE_USER_ID,
+                    messages=[TextMessage(text=combined_message)]
+                )
+            )
         
     except Exception as e:
         print(f"推播執行失敗: {e}")
