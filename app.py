@@ -51,10 +51,10 @@ def analyze_news_with_ai(title):
     max_retries = 2
     for attempt in range(max_retries):
         try:
-            # 透過 http_options 設定 8 秒逾時（單位為毫秒：8000）
+            # 透過 http_options 設定 11 秒逾時（單位為毫秒：11000）
             client = genai.Client(
                 api_key=GEMINI_API_KEY,
-                http_options=types.HttpOptions(timeout=8000)
+                http_options=types.HttpOptions(timeout=11000)
             )
             
             # 維持指定模型
