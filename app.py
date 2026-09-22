@@ -42,7 +42,7 @@ def analyze_news_with_ai(title):
 
 任務與邏輯：
 1. 若新聞涉及基隆大型活動、新景點/設施開幕、觀光活動（如：普渡、燈會、市集、國家考試等），請簡短建議：「建議注意周邊設備狀況，確保活動期間穩定供電。」
-2. 若新聞涉及負面輿情、公益活動或需關注事件（如：竊電、無預警停電、跳電、民眾陳情、工安事故、挖斷電纜，房屋倒塌等），請提供 25 字以內的實務處置建議（例如：盡速派員現勘確認、預先釐清原因等）。
+2. 若新聞涉及負面輿情、本公司公益活動或需關注事件（如：竊電、無預警停電、跳電、民眾陳情、工安事故、挖斷電纜，房屋倒塌、撞斷電桿等），請提供 25 字以內的實務處置建議（例如：盡速派員現勘確認、預先釐清原因等）。
 3. 若為純粹無關之一般新聞，請僅回覆 "無處置建議"。
 
 請直接輸出建議內容，不要附加額外說明、開場白或引號。
@@ -131,7 +131,7 @@ def fetch_google_news(keywords_str, hours):
     return sorted(unique_news, key=lambda x: x['timestamp'], reverse=True)
 
 def format_news_block(news_list):
-    # 1. 取得當前台灣時間，並計算 SEARCH_HOURS (10小時) 前的時間點
+    # 1. 取得當前台灣時間，並計算 SEARCH_HOURS 前的時間點
     now_tw = datetime.now(timezone.utc) + timedelta(hours=8)
     start_tw = now_tw - timedelta(hours=SEARCH_HOURS)
 
@@ -145,24 +145,32 @@ def format_news_block(news_list):
     if not news_list:
         return f"{header}\n搜尋時間：{now_str}\n❌{SEARCH_HOURS}小時內尚無本處轄區新聞。"
 
+    processed_lines = []
+    display_idx = 1
+    
+    for item in news_list[:MAX_DISPLAY_ITEMS]:
+        # 呼叫 AI 進行分析
+        ai_advice = analyze_news_with_ai(item['title'])
+        
+        # 若 AI 回傳空值或包含「無處置建議」，則直接跳過不顯示
+        if not ai_advice or "無處置建議" in ai_advice:
+            continue
+            
+        line = f"\n{display_idx}. [{item['source']}] {item['title']}\n{item['time']} {shorten_url(item['link'])}"
+        line += f"\n🚨【AI建議】{ai_advice}"
+        
+        processed_lines.append(line)
+        display_idx += 1
+
+    # 如果經 AI 過濾後沒有任何需要顯示的警示新聞
+    if not processed_lines:
+        return f"{header}\n搜尋時間：{now_str}\n✅經 AI 過濾，{SEARCH_HOURS}小時內無須關注之相關輿情。"
+
     msg_lines = [
         header,
         f"搜尋時間：{now_str}",
-        f"✅共 {len(news_list)} 則相關新聞"
-    ]
-    
-    for idx, item in enumerate(news_list[:MAX_DISPLAY_ITEMS], 1):
-        line = f"\n{idx}. [{item['source']}] {item['title']}\n{item['time']} {shorten_url(item['link'])}"
-        
-        # 呼叫 AI 進行分析
-        ai_advice = analyze_news_with_ai(item['title'])
-        if ai_advice:
-            if "無處置建議" in ai_advice:
-                line += f"\n🙂【AI建議】{ai_advice}"
-            else:
-                line += f"\n🚨【AI建議】{ai_advice}"
-            
-        msg_lines.append(line)
+        f"✅篩選後共 {len(processed_lines)} 則需關注新聞"
+    ] + processed_lines
         
     return '\n'.join(msg_lines)
 
