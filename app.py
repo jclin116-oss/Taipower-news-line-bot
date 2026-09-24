@@ -31,13 +31,13 @@ MAX_DISPLAY_ITEMS = 15
 # LineBot v3 初始化設定
 configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
 
-# AI 分析功能（含 503/429 重試與 15 秒 Request Timeout）
+# 串接AI*暫時用GEMINI*分析功能（含 503/429 重試與 15 秒 Request Timeout）
 def analyze_news_with_ai(title):
     if not GEMINI_API_KEY:
         return None
     
     prompt = f"""
-你是一位台電基隆區營業處業務組與公共關係專家。請分析以下新聞標題：
+你是一位台電基隆區營業處業務組與公共關係專家。請分析以下新聞：
 「{title}」
 
 任務與邏輯：
