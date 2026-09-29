@@ -71,7 +71,7 @@ def analyze_news_with_ai(title):
             print(f"DEBUG: AI 分析嘗試第 {attempt + 1} 次失敗: {e}", flush=True)
             # 加入 429 判斷以應對速率限制
             if ("503" in str(e) or "429" in str(e) or "timeout" in str(e).lower()) and attempt < max_retries - 1:
-                time.sleep(2)
+                time.sleep(5)
                 continue
             break
             
