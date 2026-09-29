@@ -90,6 +90,12 @@ def fetch_google_news(keywords_str, hours):
     keyword_groups = [g.strip() for g in keywords_str.replace('，', ',').split(',') if g.strip()]
     all_news = []
     
+    # 定義管轄行政區與核心設施關鍵字（本地端二次過濾防線）
+    target_districts = [
+        '基隆', '汐止', '瑞芳', '萬里', '金山', '貢寮', '雙溪', '平溪',
+        '協和', '深澳', '核一', '核二', '核四', '基隆區營業處', '基隆區處'
+    ]
+    
     # 取得 UTC 時間與篩選下限
     now_utc = datetime.now(timezone.utc)
     time_limit_utc = now_utc - timedelta(hours=int(hours))
@@ -104,6 +110,10 @@ def fetch_google_news(keywords_str, hours):
                 for item in tree.findall('.//item'):
                     title = item.find('title').text if item.find('title') is not None else ''
                     pub_date_str = item.find('pubDate').text
+                    
+                    # 檢查標題是否包含轄區關鍵字，若無則排除
+                    if not any(district in title for district in target_districts):
+                        continue
                     
                     # 通用解析各種 RSS 時區格式 (含 +0800, GMT 等)
                     pub_date_dt = parsedate_to_datetime(pub_date_str)
