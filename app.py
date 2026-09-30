@@ -24,7 +24,7 @@ GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 REPO_A_OWNER = "jclin116-oss"
 REPO_A_NAME = "Dignitary-s-schedule-linebot"
 #重要關鍵字
-DEFAULT_KEYWORDS = '基隆, 汐止, 瑞芳, 新北萬里, 金山, 貢寮, 雙溪, 九份, 老梅, 平溪, 基隆區營業處, 協和電廠, 深澳電廠, 核一廠, 核二廠, 核四廠, 汐止變電所, 基隆變電所, 台電'
+DEFAULT_KEYWORDS = '基隆, 汐止, 瑞芳, 萬里, 金山, 貢寮, 雙溪, 九份, 老梅, 平溪, 基隆區營業處, 協和電廠, 深澳電廠, 核一廠, 核二廠, 核四廠, 汐止變電所, 基隆變電所, 台電'
 SEARCH_HOURS = 11
 MAX_DISPLAY_ITEMS = 15
 
@@ -90,16 +90,21 @@ def fetch_google_news(keywords_str, hours):
     keyword_groups = [g.strip() for g in keywords_str.replace('，', ',').split(',') if g.strip()]
     all_news = []
     
+    # 定義絕對單位關鍵字（只要標題存在，直接強制納入，不受限於事件條件）
+    absolute_units = [
+        '基隆區處', '基隆區營業處','汐止變電所', '基隆變電所'
+    ]
+
     # 定義管轄行政區與核心設施關鍵字
     target_districts = [
         '基隆', '汐止', '瑞芳', '萬里', '金山', '貢寮', '雙溪', '平溪','九份','金瓜石','八斗子','暖暖','七堵','八堵','百福','水湳洞','北海岸','東北角','汐科',
         '協和', '深澳', '核一', '核二', '核四', '基隆區營業處', '基隆區處','仁愛區','中正區','百福', '大武崙', '望海巷', '和平島', '野柳', '跳石', '福隆', '澳底', '水湳洞', '鼻頭', '十分'
     ]
     
-    # 定義電力與災害事件關鍵字，必須同時符合才納入
+    # 定義電力與災害事件關鍵字
     target_events = [
-        '火災', '撞斷電', '台電', '停電', '跳電', '變電箱', '電廠', '竊電','電力','漏電',
-        '搶修', '事故', '爆炸', '斷電', '饋線', '淹','電線','偷電','電費','竊電','大火','電桿','電線桿','儲能','綠電','用電','節能','節約能源','供電','充電','電動','施工挖斷', '路燈不亮','觸電','工安意外'
+        '火災', '撞斷電', '台電', '停電', '跳電', '變電箱','竊電','電力','漏電','地震','坍塌','土石流','颱風','捐血','淨灘','淨山',
+        '搶修', '事故', '爆炸', '斷電', '饋線', '淹','電線','偷電','電費','大火','電桿','電線桿','儲能','綠電','用電','節能','節約能源','供電','充電','電動','施工挖斷', '路燈不亮','觸電','工安意外'
     ]
     
     # 取得 UTC 時間與篩選下限
@@ -117,11 +122,17 @@ def fetch_google_news(keywords_str, hours):
                     title = item.find('title').text if item.find('title') is not None else ''
                     pub_date_str = item.find('pubDate').text
                     
-                    # 雙重條件檢查：必須「同時包含」行政區與事件關鍵字
+                    # 篩選邏輯：
+                    # 1. 檢查是否包含絕對單位（有出現直接放行）
+                    has_absolute_unit = any(unit in title for unit in absolute_units)
+                    
+                    # 2. 標準雙重條件檢查：必須「同時包含」行政區與事件關鍵字
                     has_district = any(d in title for d in target_districts)
                     has_event = any(e in title for e in target_events)
+                    has_standard_match = (has_district and has_event)
                     
-                    if not (has_district and has_event):
+                    # 只要符合絕對單位，或是符合標準雙重條件，就保留
+                    if not (has_absolute_unit or has_standard_match):
                         continue
                     
                     # 通用解析各種 RSS 時區格式 (含 +0800, GMT 等)
